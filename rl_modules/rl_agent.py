@@ -173,7 +173,7 @@ class RLAgent:
         self.o_norm.recompute_stats()
 
         if self.args.normalize_goal:
-            self.g_norm.update(transitions['g'])
+            self.g_norm.update(transitions['ag'])
             self.g_norm.recompute_stats()
 
     def _preproc_og(self, o, g):

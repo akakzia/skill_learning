@@ -109,9 +109,12 @@ class GnActor(nn.Module):
         obs_objects = [obs[:, self.dim_body + self.dim_object * i: self.dim_body + self.dim_object * (i + 1)]
                        for i in range(self.nb_objects)]
 
-        delta_g = g - ag
+        # delta_g = g - ag
 
-        inp_mp = torch.stack([torch.cat([obs_body, delta_g[:, self.predicate_ids[i]], obs_objects[self.edges[i][0]],
+        # inp_mp = torch.stack([torch.cat([obs_body, delta_g[:, self.predicate_ids[i]], obs_objects[self.edges[i][0]],
+        #                                  obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
+
+        inp_mp = torch.stack([torch.cat([g, ag, obs_body, obs_objects[self.edges[i][0]],
                                          obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
 
         output_mp = self.mp_actor(inp_mp)
@@ -177,7 +180,7 @@ class GnSemantic:
         # Process indexes for graph construction
         self.edges, self.incoming_edges, self.predicate_ids = get_graph_structure(self.nb_objects)
 
-        dim_mp_actor_input = 2 * self.dim_object + 2 + self.dim_body # 2 * dim node + dim partial goal + dim global
+        dim_mp_actor_input = 2 * self.dim_object + 2 * self.dim_goal + self.dim_body # 2 * dim node + dim partial goal + dim global
         dim_mp_actor_output = 3 * dim_mp_actor_input
 
         dim_mp_critic_input = 2 * self.dim_object + 2 + (self.dim_body + self.dim_act) # 2 * dim node + dim partial goal + dim global

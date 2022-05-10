@@ -87,13 +87,14 @@ class her_sampler:
         return transitions
 
     def compute_reward_masks(self, ag, g):
-        if self.reward_type == 'sparse':
-            return (ag == g).all().astype(np.float32)
-        elif self.reward_type == 'per_predicate':
-            return (ag == g).astype(np.float32).sum()
-        else:
-            reward = 0.
-            for subgoal in self.semantic_ids:
-                if (ag[subgoal] == g[subgoal]).all():
-                    reward = reward + 1.
+        # if self.reward_type == 'sparse':
+        #     return (ag == g).all().astype(np.float32)
+        # elif self.reward_type == 'per_predicate':
+        #     return (ag == g).astype(np.float32).sum()
+        # else:
+        #     reward = 0.
+        #     for subgoal in self.semantic_ids:
+        #         if (ag[subgoal] == g[subgoal]).all():
+        #             reward = reward + 1.
+        reward = 1. if np.abs(np.linalg.norm(ag) - np.linalg.norm(g)) < 0.0001 else 0.
         return reward

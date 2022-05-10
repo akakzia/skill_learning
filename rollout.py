@@ -1,8 +1,13 @@
 import numpy as np
 
 
+def compute_dense_reward(ag, g):
+    return - np.abs(np.linalg.norm(ag) - np.linalg.norm(g))
+    
 def is_success(ag, g):
-    return (ag == g).all()
+    d_ag = np.linalg.norm(ag)
+    d_g = np.linalg.norm(g)
+    return np.abs(d_ag - d_g) < 0.0001
 
 def at_least_one_fallen(observation, n):
     """ Given a observation, returns true if at least one object has fallen """
@@ -35,19 +40,22 @@ class RolloutWorker:
             if true_eval or self.continuous:
                 observation = self.env.unwrapped.reset_goal(goal=np.array(goals[i]))
             obs = observation['observation']
-            ag = observation['achieved_goal']
-            ag_bin = observation['achieved_goal_binary']
-            g = observation['desired_goal']
-            g_bin = observation['desired_goal_binary']
+            g= goals[i]
+            # ag = observation['achieved_goal']
+            # ag_bin = observation['achieved_goal_binary']
+            # g = observation['desired_goal']
+            # g_bin = observation['desired_goal_binary']
+            distance = np.abs(obs[10:13] - obs[25:28])
 
-            ep_obs, ep_ag, ep_ag_bin, ep_g, ep_g_bin, ep_actions, ep_success, ep_rewards = [], [], [], [], [], [], [], []
+            # ep_obs, ep_ag, ep_ag_bin, ep_g, ep_g_bin, ep_actions, ep_success, ep_rewards = [], [], [], [], [], [], [], []
+            ep_obs, ep_ag, ep_g, ep_actions, ep_success, ep_rewards = [], [], [], [], [], []
 
             # Start to collect samples
             for t in range(self.env_params['max_timesteps']):
                 # Run policy for one step
                 no_noise = true_eval  # do not use exploration noise if running self-evaluations or offline evaluations
                 # feed both the observation and mask to the policy module
-                action = self.policy.act(obs.copy(), ag.copy(), g.copy(), no_noise)
+                action = self.policy.act(obs.copy(), distance.copy(), g.copy(), no_noise)
 
                 # feed the actions into the environment
                 if animated:
@@ -55,36 +63,42 @@ class RolloutWorker:
 
                 observation_new, r, _, _ = self.env.step(action)
                 obs_new = observation_new['observation']
-                ag_new = observation_new['achieved_goal']
-                ag_new_bin = observation_new['achieved_goal_binary']
+                # ag_new = observation_new['achieved_goal']
+                # ag_new_bin = observation_new['achieved_goal_binary']
+                distance_new = np.abs(obs_new[10:13] - obs_new[25:28])
+                r = compute_dense_reward(distance_new, g)
 
                 # Append rollouts
                 ep_obs.append(obs.copy())
-                ep_ag.append(ag.copy())
-                ep_ag_bin.append(ag_bin.copy())
+                ep_ag.append(distance.copy())
+                # ep_ag.append(ag.copy())
+                # ep_ag_bin.append(ag_bin.copy())
                 ep_g.append(g.copy())
-                ep_g_bin.append(g_bin.copy())
+                # ep_g_bin.append(g_bin.copy())
                 ep_actions.append(action.copy())
                 ep_rewards.append(r)
-                ep_success.append(is_success(ag_new, g))
+                ep_success.append(is_success(distance_new, g))
 
                 # Re-assign the observation
                 obs = obs_new
-                ag = ag_new
-                ag_bin = ag_new_bin
+                # ag = ag_new
+                # ag_bin = ag_new_bin
+                distance = distance_new
 
             ep_obs.append(obs.copy())
-            ep_ag.append(ag.copy())
-            ep_ag_bin.append(ag_bin.copy())
+            ep_ag.append(distance.copy())
+            # ep_ag.append(ag.copy())
+            # ep_ag_bin.append(ag_bin.copy())
 
             # Gather everything
             episode = dict(obs=np.array(ep_obs).copy(),
                            act=np.array(ep_actions).copy(),
                            g=np.array(ep_g).copy(),
+                        #    ag=np.array(ep_ag).copy(),
                            ag=np.array(ep_ag).copy(),
                            success=np.array(ep_success).copy(),
-                           g_binary=np.array(ep_g_bin).copy(),
-                           ag_binary=np.array(ep_ag_bin).copy(),
+                        #    g_binary=np.array(ep_g_bin).copy(),
+                        #    ag_binary=np.array(ep_ag_bin).copy(),
                            rewards=np.array(ep_rewards).copy())
 
 
