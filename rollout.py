@@ -7,7 +7,7 @@ def compute_dense_reward(ag, g):
 def is_success(ag, g):
     d_ag = np.linalg.norm(ag)
     d_g = np.linalg.norm(g)
-    return np.abs(d_ag - d_g) < 0.0001
+    return np.abs(d_ag - d_g) < 0.07
 
 def at_least_one_fallen(observation, n):
     """ Given a observation, returns true if at least one object has fallen """

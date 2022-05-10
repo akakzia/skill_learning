@@ -96,5 +96,5 @@ class her_sampler:
         #     for subgoal in self.semantic_ids:
         #         if (ag[subgoal] == g[subgoal]).all():
         #             reward = reward + 1.
-        reward = 1. if np.abs(np.linalg.norm(ag) - np.linalg.norm(g)) < 0.0001 else 0.
+        reward = 1. if np.abs(np.linalg.norm(ag) - np.linalg.norm(g)) < 0.07 else 0.
         return reward
