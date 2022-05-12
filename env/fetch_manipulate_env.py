@@ -62,7 +62,8 @@ class FetchManipulateEnv(robot_env.RobotEnv):
         self.predicates = predicates
         self.num_predicates = len(self.predicates)
         self.reward_type = reward_type
-
+        
+        self.p_grasp = 0.5
         self.goal_size = num_blocks * (num_blocks - 1) * 3 // 2
 
         self.object_names = ['object{}'.format(i) for i in range(self.num_blocks)]
@@ -280,7 +281,7 @@ class FetchManipulateEnv(robot_env.RobotEnv):
         self.initial_gripper_xpos = self.sim.data.get_site_xpos('robot0:grip').copy()
         self.height_offset = self.sim.data.get_site_xpos('object0')[2]
 
-    def reset_goal(self, goal):
+    def reset_goal(self, goal, biased_init=False):
         """
         This function resets the environment and target the goal given as input
         Args:
@@ -324,6 +325,14 @@ class FetchManipulateEnv(robot_env.RobotEnv):
                     # safety net to be sure we find positions
                     over = False
                     break
+        if biased_init and np.random.rand() < self.p_grasp:
+            ids = list(range(self.num_blocks))
+            # do not grasp base of stack
+            if stack:
+                for s in stack[1:]:
+                    ids.remove(s)
+            idx_grasp = np.random.choice(ids)
+            self._grasp(idx_grasp)
 
         self.sim.forward()
         obs = self._get_obs()
