@@ -158,6 +158,9 @@ def launch(args):
                 av_res = np.array(all_results).mean(axis=0)
                 av_rewards = np.array(all_rewards).mean(axis=0)
                 global_sr = np.mean(av_res)
+                logger.record_tabular('loss_encoder', loss_encoder)
+                logger.record_tabular('loss_mse', loss_mse)
+                logger.record_tabular('loss_kld', loss_kld)
                 log_and_save(goal_sampler, epoch, episode_count, av_res, av_rewards, global_sr, time_dict)
 
                 # Saving policy models
