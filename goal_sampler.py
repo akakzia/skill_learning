@@ -34,9 +34,9 @@ class GoalSampler:
             # Embeddings at this stage are kept zeros
             embeddings = np.zeros((n_goals, 3))
             if self.args.cuda:
-                goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).cpu().numpy()
+                goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().cpu().numpy()
             else:
-                goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).numpy()
+                goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().numpy()
             # At this step, goals are normalized
             # goals = self.policy.g_norm.unormalize(goals)
             # unormalized_goals = (goals * normalizer.std ) + normalizer.mean
