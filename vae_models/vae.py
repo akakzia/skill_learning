@@ -80,6 +80,10 @@ class ContextVAE(nn.Module):
         # buffer_tensor = torch.Tensor(buffer_norm)
         states_tensor = torch.Tensor(states)
         embeddings = torch.zeros([self.batch_size, 3])
+        if self.args.cuda:
+            states_tensor = states_tensor.cuda()
+            embeddings = embeddings.cuda()
+            
         recon_x, means, log_var, z = self.forward(states_tensor, embeddings)
         # Compute loss 
         loss, loss_mse, loss_kld = loss_fn(recon_x, states_tensor, means, log_var)
