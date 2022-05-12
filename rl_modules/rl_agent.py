@@ -6,6 +6,7 @@ from rl_modules.networks import QNetworkFlat, GaussianPolicyFlat
 from mpi_utils.normalizer import normalizer
 from her_modules.her import her_sampler
 from updates import update_flat, update_deepsets
+from vae_models.vae import ContextVAE
 
 
 """
@@ -18,13 +19,11 @@ def hard_update(target, source):
 
 
 class RLAgent:
-    def __init__(self, args, compute_rew, goal_sampler):
+    def __init__(self, args, compute_rew):
 
         self.args = args
         self.alpha = args.alpha
         self.env_params = args.env_params
-
-        self.goal_sampler = goal_sampler
 
         self.total_iter = 0
 
@@ -33,37 +32,27 @@ class RLAgent:
         # create the network
         self.architecture = self.args.architecture
 
-        if self.architecture == 'flat':
-            from rl_modules.flat_models import FlatSemantic
-            self.model = FlatSemantic(self.env_params)
-        elif self.architecture == 'interaction_network':
-            from rl_modules.interaction_models import InSemantic
-            self.model = InSemantic(self.env_params, args)
-        elif self.architecture == 'interaction_network_2':
-            from rl_modules.interaction_models_v2 import GnSemantic
-            self.model = GnSemantic(self.env_params, args)
-        elif self.architecture == 'full_gn':
+        if self.architecture == 'full_gn':
             from rl_modules.gn_models import GnSemantic
             self.model = GnSemantic(self.env_params, args)
-        elif self.architecture == 'relation_network':
-            from rl_modules.rn_models import RnSemantic
-            self.model = RnSemantic(self.env_params, args)
-        elif self.architecture == 'deep_sets':
-            from rl_modules.deepsets_models import DsSemantic
-            self.model = DsSemantic(self.env_params, args)
         else:
             raise NotImplementedError
+
+        # Define Goal Autoencoder
+        self.goal_encoder = ContextVAE(args)
 
         # if use GPU
         if self.args.cuda:
             self.model.actor.cuda()
             self.model.critic.cuda()
             self.model.critic_target.cuda()
+            self.goal_encoder.cuda()
         # sync the networks across the CPUs
         sync_networks(self.model.critic)
         sync_networks(self.model.actor)
         hard_update(self.model.critic_target, self.model.critic)
         sync_networks(self.model.critic_target)
+        sync_networks(self.goal_encoder)
 
         # create the optimizer
         self.policy_optim = torch.optim.Adam(list(self.model.actor.parameters()), lr=self.args.lr_actor)
@@ -89,8 +78,7 @@ class RLAgent:
         # create the replay buffer
         self.buffer = ReplayBuffer(env_params=self.env_params,
                                   buffer_size=self.args.buffer_size,
-                                  sample_func=self.her_module.sample_her_transitions,
-                                  goal_sampler=self.goal_sampler
+                                  sample_func=self.her_module.sample_her_transitions
                                   )
 
     def act(self, obs, ag, g, no_noise):
@@ -135,6 +123,13 @@ class RLAgent:
         # soft update
         if self.total_iter % self.freq_target_update == 0:
             self._soft_update_target_network(self.model.critic_target, self.model.critic)
+    
+    def train_encoder(self):
+        batch = self.goal_encoder.buffer.sample(self.args.vae_batch_size)
+        # batch_norm = self.g_norm.normalize(batch)
+        loss, loss_mse, loss_kld = self.goal_encoder.train(batch)
+
+        return loss, loss_mse, loss_kld
                 
 
     def _select_actions(self, state, no_noise=False):
@@ -172,9 +167,8 @@ class RLAgent:
         # recompute the stats
         self.o_norm.recompute_stats()
 
-        if self.args.normalize_goal:
-            self.g_norm.update(transitions['g'])
-            self.g_norm.recompute_stats()
+        self.g_norm.update(transitions['ag'])
+        self.g_norm.recompute_stats()
 
     def _preproc_og(self, o, g):
         o = np.clip(o, -self.args.clip_obs, self.args.clip_obs)

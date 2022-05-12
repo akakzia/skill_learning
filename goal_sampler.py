@@ -3,20 +3,20 @@ from utils import get_idxs_per_relation
 from mpi4py import MPI
 
 
-MAX_DATA_LEN = 10000
-MIN_DATA_LEN = 1
+MAX_DATA_LEN = int(1e6)
+MIN_DATA_LEN = 1000
 
 class GoalSampler:
-    def __init__(self, args):
+    def __init__(self, args, policy):
         self.num_rollouts_per_mpi = args.num_rollouts_per_mpi
         self.rank = MPI.COMM_WORLD.Get_rank()
 
         self.goal_dim = 3 # distances
         self.relation_ids = get_idxs_per_relation(n=args.n_blocks)
 
-        self.encountered_distances= []
-
         self.continuous = args.algo == 'continuous'
+
+        self.policy = policy
 
         self.init_stats()
 
@@ -25,18 +25,18 @@ class GoalSampler:
         Sample n_goals goals to be targeted during rollouts
         evaluation controls whether or not to sample the goal uniformly or according to curriculum
         """
-        # if evaluation and len(self.discovered_goals) > 0:
-        #     goals = np.random.choice(self.discovered_goals, size=self.num_rollouts_per_mpi)
-        # else:
-        if len(self.encountered_distances) < MIN_DATA_LEN:
-            # goals = np.random.choice([-1., 1.], size=(n_goals, self.goal_dim))
-            goals = np.random.uniform(low=0., high=0.15, size=(n_goals, self.goal_dim))
+        if evaluation:
+            # Evaluate on encountered goals
+            goals = self.policy.goal_encoder.buffer.sample(n_goals)
         else:
-            # sample uniformly from discovered goals
-            # goal_ids = np.random.choice(range(len(self.discovered_goals)), size=n_goals)
-            # goals = np.array(self.discovered_goals)[goal_ids]
-            goal_ids = np.random.randint(len(self.encountered_distances), size=n_goals)
-            goals = np.array([self.encountered_distances[i] for i in goal_ids])
+            # Embeddings at this stage are kept zeros
+            embeddings = np.zeros((n_goals, 3))
+            goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().numpy()
+            # At this step, goals are normalized
+            # goals = self.policy.g_norm.unormalize(goals)
+            # unormalized_goals = (goals * normalizer.std ) + normalizer.mean
+            stop = 1
+            # generated goals are normalized
         return goals
 
     def update(self, episodes, t):
@@ -48,20 +48,20 @@ class GoalSampler:
         all_episodes = MPI.COMM_WORLD.gather(episodes, root=0)
 
         if self.rank == 0:
+            discovered_goals = []
             all_episode_list = [e for eps in all_episodes for e in eps]
 
             for e in all_episode_list:
-                self.encountered_distances.append(e['ag'][-1])
+                discovered_goals += [e for e in np.unique(np.around(e['ag'], decimals=3), axis=0)]
 
-        self.encountered_distances = self.encountered_distances[-MAX_DATA_LEN:]
-        self.sync()
+        discovered_goals = MPI.COMM_WORLD.bcast(discovered_goals, root=0)
+        # self.sync()
 
-        return episodes
+        return episodes, discovered_goals
 
     def sync(self):
-        # self.discovered_goals = MPI.COMM_WORLD.bcast(self.discovered_goals, root=0)
-        # self.discovered_goals_str = MPI.COMM_WORLD.bcast(self.discovered_goals_str, root=0)
         self.encountered_distances = MPI.COMM_WORLD.bcast(self.encountered_distances, root=0)
+
 
     def build_batch(self, batch_size):
         goal_ids = np.random.choice(np.arange(len(self.discovered_goals)), size=batch_size)
@@ -78,9 +78,8 @@ class GoalSampler:
         self.stats['episodes'] = []
         self.stats['global_sr'] = []
         self.stats['avg_rew'] = []
-        self.stats['nb_discovered'] = []
-        keys = ['goal_sampler', 'rollout', 'gs_update', 'store', 'norm_update',
-                'policy_train', 'eval', 'epoch', 'total']
+        keys = ['goal_sampler', 'rollout', 'gs_update', 'store_episodes', 'store_goals', 
+                'vae_train', 'norm_update', 'policy_train', 'eval', 'epoch', 'total']
         for k in keys:
             self.stats['t_{}'.format(k)] = []
 
@@ -91,4 +90,3 @@ class GoalSampler:
         self.stats['avg_rew'].append(av_rew[0])
         for k in time_dict.keys():
             self.stats['t_{}'.format(k)].append(time_dict[k])
-        self.stats['nb_discovered'].append(len(self.encountered_distances))

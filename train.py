@@ -6,10 +6,11 @@ import gym
 import os
 from arguments import get_args
 from rl_modules.rl_agent import RLAgent
+from vae_models.vae import ContextVAE
 import random
 from rollout import RolloutWorker
 from goal_sampler import GoalSampler
-from utils import init_storage, get_eval_goals
+from utils import init_storage
 import time
 from mpi_utils import logger
 
@@ -50,16 +51,18 @@ def launch(args):
 
     args.env_params = get_env_params(env)
 
-    goal_sampler = GoalSampler(args)
+    # goalVAE = ContextVAE(args)
 
     # Initialize RL Agent
     if args.agent == "SAC":
-        policy = RLAgent(args, env.compute_reward, goal_sampler)
+        policy = RLAgent(args, env.compute_reward)
     else:
         raise NotImplementedError
+    
+    goal_sampler = GoalSampler(args, policy)
 
     # Initialize Rollout Worker
-    rollout_worker = RolloutWorker(env, policy, goal_sampler,  args)
+    rollout_worker = RolloutWorker(env, policy,  args)
 
     # Main interaction loop
     episode_count = 0
@@ -70,7 +73,9 @@ def launch(args):
         time_dict = dict(goal_sampler=0,
                          rollout=0,
                          gs_update=0,
-                         store=0,
+                         store_episodes=0,
+                         store_goals=0,
+                         vae_train=0,
                          norm_update=0,
                          policy_train=0,
                          eval=0,
@@ -91,25 +96,36 @@ def launch(args):
             t_i = time.time()
             episodes = rollout_worker.generate_rollout(goals=goals,  # list of goal configurations
                                                        true_eval=False,  # these are not offline evaluation episodes
+                                                       biased_init=False,
                                                       )
             time_dict['rollout'] += time.time() - t_i
 
             # Goal Sampler updates
             t_i = time.time()
-            if args.algo == 'semantic':
-                episodes = goal_sampler.update(episodes, episode_count)
+            episodes, discovered_goals = goal_sampler.update(episodes, episode_count)
             time_dict['gs_update'] += time.time() - t_i
 
             # Storing episodes
             t_i = time.time()
             policy.store(episodes)
-            time_dict['store'] += time.time() - t_i
+            time_dict['store_episodes'] += time.time() - t_i
+
+            # TODO Storing goals
+            t_i = time.time()
+            policy.goal_encoder.store(discovered_goals)
+            time_dict['store_goals'] += time.time() - t_i
 
             # Updating observation normalization
             t_i = time.time()
             for e in episodes:
                 policy._update_normalizer(e)
             time_dict['norm_update'] += time.time() - t_i
+
+            # Goal encoder updates
+            t_i = time.time()
+            for _ in range(args.n_encoder_updates):
+                loss_encoder, loss_mse, loss_kld = policy.train_encoder()
+            time_dict['vae_train'] += time.time() - t_i
 
             # Policy updates
             t_i = time.time()
@@ -147,7 +163,8 @@ def launch(args):
                 # Saving policy models
                 if epoch % args.save_freq == 0:
                     policy.save(model_path, epoch)
-                if rank==0: logger.info('\tEpoch #{}: SR: {}'.format(epoch, global_sr))
+                if rank==0: 
+                    logger.info(f'\tEpoch #{epoch:d}: SR: {global_sr:f} | Loss VAE: {loss_encoder:.3f} | {loss_mse:.3f} | {loss_kld:.3f}')
 
 
 def log_and_save( goal_sampler, epoch, episode_count, av_res, av_rew, global_sr, time_dict):

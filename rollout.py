@@ -1,13 +1,11 @@
 import numpy as np
 
 
-def compute_dense_reward(ag, g):
-    return - np.abs(np.linalg.norm(ag) - np.linalg.norm(g))
+def compute_incremental_reward(ag, g):
+    return np.sum(np.abs(ag - g) < 0.01)
     
 def is_success(ag, g):
-    d_ag = np.linalg.norm(ag)
-    d_g = np.linalg.norm(g)
-    return np.abs(d_ag - d_g) < 0.07
+    return (np.abs(ag - g) < 0.01).all()
 
 def at_least_one_fallen(observation, n):
     """ Given a observation, returns true if at least one object has fallen """
@@ -21,24 +19,19 @@ def at_least_one_fallen(observation, n):
 
 
 class RolloutWorker:
-    def __init__(self, env, policy, goal_sampler, args):
+    def __init__(self, env, policy, args):
 
         self.env = env
         self.policy = policy
         self.env_params = args.env_params
-        self.goal_sampler = goal_sampler
         self.continuous = args.algo == 'continuous'
         self.args = args
 
-    def generate_rollout(self, goals, true_eval, animated=False):
+    def generate_rollout(self, goals, true_eval, biased_init=False, animated=False):
 
         episodes = []
-        # Reset only once for all the goals in cycle if not performing evaluation
-        if not true_eval and not self.continuous:
-            observation = self.env.unwrapped.reset_goal(goal=np.array(goals[0]))
         for i in range(goals.shape[0]):
-            if true_eval or self.continuous:
-                observation = self.env.unwrapped.reset_goal(goal=np.array(goals[i]))
+            observation = self.env.unwrapped.reset_goal(goal=np.array(goals[i]), biased_init=biased_init)
             obs = observation['observation']
             g= goals[i]
             # ag = observation['achieved_goal']
@@ -66,7 +59,7 @@ class RolloutWorker:
                 # ag_new = observation_new['achieved_goal']
                 # ag_new_bin = observation_new['achieved_goal_binary']
                 distance_new = np.abs(obs_new[10:13] - obs_new[25:28])
-                r = compute_dense_reward(distance_new, g)
+                r = compute_incremental_reward(distance_new, g)
 
                 # Append rollouts
                 ep_obs.append(obs.copy())
@@ -103,11 +96,6 @@ class RolloutWorker:
 
 
             episodes.append(episode)
-
-            # if not eval, make sure that no block has fallen 
-            fallen = at_least_one_fallen(obs, self.args.n_blocks)
-            if not true_eval and fallen:
-                observation = self.env.unwrapped.reset_goal(goal=np.array(goals[i]))
 
         return episodes
 
