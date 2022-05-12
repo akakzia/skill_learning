@@ -18,6 +18,8 @@ class GoalSampler:
 
         self.policy = policy
 
+        self.args = args
+
         self.init_stats()
 
     def sample_goal(self, n_goals, evaluation):
