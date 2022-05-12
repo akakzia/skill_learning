@@ -340,7 +340,8 @@ class FetchManipulateEnv(robot_env.RobotEnv):
 
     def _grasp(self, i):
         obj = self.sim.data.get_joint_qpos('{}:joint'.format(self.object_names[i]))
-        obj[:3] = self.sim.data.get_site_xpos('robot0:grip')
+        # obj[:3] = self.sim.data.get_site_xpos('robot0:grip')
+        obj[:3] = self.initial_gripper_xpos[:3]
         self.sim.data.set_joint_qpos('{}:joint'.format(self.object_names[i]), obj.copy())
         self.sim.data.set_joint_qpos('robot0:r_gripper_finger_joint', 0.0240)
         self.sim.data.set_joint_qpos('robot0:l_gripper_finger_joint', 0.0240)
