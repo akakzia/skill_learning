@@ -14,7 +14,7 @@ class ContextVAE(nn.Module):
 
     def __init__(self, args):
         super().__init__()
-
+        self.args = args
         self.inner_sizes = args.layer_sizes
         self.state_size = args.env_params['goal']
         self.embedding_size = args.embedding_size
@@ -56,6 +56,10 @@ class ContextVAE(nn.Module):
         z = torch.randn([batch_size, self.latent_size])
 
         embeddings = torch.Tensor(embeddings)
+
+        if self.args.cuda:
+            z = z.cuda()
+            embeddings = embeddings.cuda()
 
         recon_state = self.decoder(torch.cat((z, embeddings), dim=1))
 
