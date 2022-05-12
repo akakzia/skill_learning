@@ -8,11 +8,10 @@ the replay buffer here is basically from the openai baselines code
 
 
 class ReplayBuffer:
-    def __init__(self, env_params, buffer_size, sample_func, goal_sampler):
+    def __init__(self, env_params, buffer_size, sample_func):
         self.env_params = env_params
         self.T = env_params['max_timesteps']
         self.size = buffer_size // self.T
-        self.goal_sampler = goal_sampler
 
         # memory management
         self.sample_func = sample_func
