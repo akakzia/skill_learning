@@ -28,7 +28,7 @@ class DataBuffer:
 
             for i, e in enumerate(data_batch):
                 # store the informations
-                self.buffer[idxs[i]] = e[i]
+                self.buffer[idxs[i]] = e
 
     # sample the data from the replay buffer
     def sample(self, batch_size):
