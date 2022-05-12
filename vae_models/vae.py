@@ -75,11 +75,6 @@ class ContextVAE(nn.Module):
             MSE = torch.nn.functional.mse_loss(recon_x, x, reduction='sum')
             KLD = -0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
             return (MSE + self.k_param * KLD) / x.size(0), MSE / x.size(0), KLD / x.size(0)
-        # sample data
-        # ids = np.random.randint(len(self.data), size=self.batch_size)
-        # buffer = np.array([self.data[i] for i in ids])
-        # buffer_norm = normalizer.normalize(buffer)
-        # buffer_tensor = torch.Tensor(buffer_norm)
         states_tensor = torch.Tensor(states)
         embeddings = torch.zeros([self.batch_size, 3])
         if self.args.cuda:
@@ -95,6 +90,11 @@ class ContextVAE(nn.Module):
         self.optimizer.step()
 
         return loss.item(), loss_mse.item(), loss_kld.item()
+    
+    def save(self, model_path, epoch):
+        # Save buffer and parameters
+        torch.save([self.buffer.buffer, self.buffer.current_size, self.encoder.state_dict(), self.decoder.state_dict()],
+                    model_path + '/vae_model_{}.pt'.format(epoch))
 
 class Encoder(nn.Module):
 

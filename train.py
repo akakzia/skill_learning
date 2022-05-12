@@ -163,6 +163,7 @@ def launch(args):
                 # Saving policy models
                 if epoch % args.save_freq == 0:
                     policy.save(model_path, epoch)
+                    policy.goal_encoder.save(model_path, epoch)
                 if rank==0: 
                     logger.info(f'\tEpoch #{epoch:d}: SR: {global_sr:f} | Loss VAE: {loss_encoder:.3f} | {loss_mse:.3f} | {loss_kld:.3f}')
 
