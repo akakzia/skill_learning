@@ -96,7 +96,7 @@ def launch(args):
             t_i = time.time()
             episodes = rollout_worker.generate_rollout(goals=goals,  # list of goal configurations
                                                        true_eval=False,  # these are not offline evaluation episodes
-                                                       biased_init=True,
+                                                       biased_init=args.biased_init,
                                                       )
             time_dict['rollout'] += time.time() - t_i
 

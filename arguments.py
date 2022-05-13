@@ -21,10 +21,11 @@ def get_args():
     parser.add_argument('--n-blocks', type=int, default=2, help='The number of blocks to be considered in the FetchManipulate env')
     # the training arguments
     parser.add_argument('--n-epochs', type=int, default=1000, help='the number of epochs to train the agent')
-    parser.add_argument('--n-cycles', type=int, default=50, help='the times to collect samples per epoch')
-    parser.add_argument('--n-batches', type=int, default=30, help='the times to update the network')
+    parser.add_argument('--n-cycles', type=int, default=1, help='the times to collect samples per epoch')
+    parser.add_argument('--n-batches', type=int, default=1, help='the times to update the network')
     parser.add_argument('--num-rollouts-per-mpi', type=int, default=2, help='the rollouts per mpi')
     parser.add_argument('--batch-size', type=int, default=256, help='the sample batch size')
+    parser.add_argument('--biased-init', type=bool, default=True, help='test')
     # the replay arguments
     parser.add_argument('--multi-criteria-her', type=bool, default=False, help='test')
     parser.add_argument('--replay-strategy', type=str, default='future', help='the HER strategy')
@@ -61,6 +62,7 @@ def get_args():
     parser.add_argument("--k-param", type=float, default=1.)
     parser.add_argument("--vae-buffer-size", type=int, default=int(1e6))
     parser.add_argument("--n-encoder-updates", type=int, default=10)
+    parser.add_argument("--vae-batch-sample-strategy", type=str, default='limits')
     # the testing arguments
     parser.add_argument('--n-test-rollouts', type=int, default=1, help='the number of tests')
 
