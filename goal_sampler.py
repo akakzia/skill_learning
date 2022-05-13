@@ -3,8 +3,7 @@ from utils import get_idxs_per_relation
 from mpi4py import MPI
 
 
-MAX_DATA_LEN = int(1e6)
-MIN_DATA_LEN = 1000
+START_GENERATE_GOALS = 1000
 
 class GoalSampler:
     def __init__(self, args, policy):
@@ -39,7 +38,7 @@ class GoalSampler:
                 raise NotImplementedError
         else:
             # Embeddings at this stage are kept zeros
-            if self.policy.goal_encoder.buffer.current_size > 0:
+            if self.policy.goal_encoder.buffer.current_size < START_GENERATE_GOALS:
                 goals = self.policy.goal_encoder.buffer.sample(n_goals)
             else:
                 goals = np.random.uniform(low=0, high=0.1, size = (n_goals, self.args.env_params['goal']))
