@@ -62,6 +62,7 @@ def get_args():
     parser.add_argument("--k-param", type=float, default=0.2)
     parser.add_argument("--vae-buffer-size", type=int, default=int(1e6))
     parser.add_argument("--n-encoder-updates", type=int, default=10)
+    parser.add_argument("--scaling-factor", type=int, default=10)
     parser.add_argument("--vae-batch-sample-strategy", type=str, default='buffer')
     # the testing arguments
     parser.add_argument('--n-test-rollouts', type=int, default=1, help='the number of tests')

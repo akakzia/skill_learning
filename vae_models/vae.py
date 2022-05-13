@@ -20,6 +20,7 @@ class ContextVAE(nn.Module):
         self.state_size = args.env_params['goal']
         self.embedding_size = args.embedding_size
         self.latent_size = args.latent_size
+        self.scaling_factor = args.scaling_factor
 
 
         encoder_layer_sizes = [self.state_size + self.embedding_size] + self.inner_sizes
@@ -70,6 +71,9 @@ class ContextVAE(nn.Module):
 
         recon_state = self.decoder(torch.cat((z, embeddings), dim=1))
 
+        # Scale down reconstructions
+        recon_state = recon_state / self.scaling_factor
+
         return recon_state
     
     def store(self, goal_batch):
@@ -88,7 +92,7 @@ class ContextVAE(nn.Module):
             MSE = torch.nn.functional.mse_loss(recon_x, x, reduction='sum')
             KLD = -0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
             return (MSE + self.k_param * KLD) / x.size(0), MSE / x.size(0), KLD / x.size(0)
-        states_tensor = torch.Tensor(states)
+        states_tensor = torch.Tensor(states * self.scaling_factor)
         embeddings = torch.zeros([self.batch_size, 3])
         if self.args.cuda:
             states_tensor = states_tensor.cuda()
