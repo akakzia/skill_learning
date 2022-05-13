@@ -63,7 +63,8 @@ class FetchManipulateEnv(robot_env.RobotEnv):
         self.num_predicates = len(self.predicates)
         self.reward_type = reward_type
         
-        self.p_grasp = 0.5
+        self.p_grasp = 0.3
+        self.p_stack = 0.3
         self.goal_size = num_blocks * (num_blocks - 1) * 3 // 2
 
         self.object_names = ['object{}'.format(i) for i in range(self.num_blocks)]
@@ -294,45 +295,71 @@ class FetchManipulateEnv(robot_env.RobotEnv):
 
         self.sim.set_state(self.initial_state)
 
-        # Reset with all coplanar blocks and make sure to avoid unstable cases (blocks initialized at the same spot)
-        stack = None
-        # place cubes away from each other
-        obj_placed = 0
-        positions = []
-        over = False
-        while not over:
-            over = True
-            counter = 0
-            while obj_placed < len(self.object_names):
-                counter += 1
-                object_qpos = self.sim.data.get_joint_qpos('{}:joint'.format(self.object_names[obj_placed]))
+        if biased_init and np.random.rand() < self.p_stack:
+            stack = list(np.random.choice([i for i in range(len(self.object_names))], 2, replace=False))
+            z_stack = [0.475, 0.425]
+            pos_stack = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+            for i, obj_name in enumerate(self.object_names):
+                object_qpos = self.sim.data.get_joint_qpos('{}:joint'.format(obj_name))
                 assert object_qpos.shape == (7,)
-                object_qpos[2] = 0.425
-                object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range,
-                                                                                        self.obj_range,
-                                                                                        size=2)
-                object_qpos[:2] = object_xpos
-                to_place = True
-                for p in positions:
-                    if np.linalg.norm(object_xpos - p) < (np.sqrt(2) * 0.05):
-                        to_place = False
+                if i in stack:
+                    object_qpos[2] = z_stack[stack.index(i)]
+                    object_qpos[:2] = pos_stack.copy()
+
+                else:
+                    # place third object at least 0.05 away from other cubes
+                    object_qpos[2] = 0.425
+                    counter = 0
+                    while counter < 100:
+                        counter += 1
+                        object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range,
+                                                                                             self.obj_range,
+                                                                                             size=2)
+                        if np.linalg.norm(object_xpos - pos_stack) > (np.sqrt(2) * 0.05):
+                            break
+                    object_qpos[:2] = object_xpos.copy()
+                self.sim.data.set_joint_qpos('{}:joint'.format(obj_name), object_qpos)
+                
+        else:
+            # Reset with all coplanar blocks and make sure to avoid unstable cases (blocks initialized at the same spot)
+            stack = None
+            # place cubes away from each other
+            obj_placed = 0
+            positions = []
+            over = False
+            while not over:
+                over = True
+                counter = 0
+                while obj_placed < len(self.object_names):
+                    counter += 1
+                    object_qpos = self.sim.data.get_joint_qpos('{}:joint'.format(self.object_names[obj_placed]))
+                    assert object_qpos.shape == (7,)
+                    object_qpos[2] = 0.425
+                    object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range,
+                                                                                            self.obj_range,
+                                                                                            size=2)
+                    object_qpos[:2] = object_xpos
+                    to_place = True
+                    for p in positions:
+                        if np.linalg.norm(object_xpos - p) < (np.sqrt(2) * 0.05):
+                            to_place = False
+                            break
+                    if to_place:
+                        self.sim.data.set_joint_qpos('{}:joint'.format(self.object_names[obj_placed]), object_qpos)
+                        positions.append(object_xpos.copy())
+                        obj_placed += 1
+                    if counter > 100:
+                        # safety net to be sure we find positions
+                        over = False
                         break
-                if to_place:
-                    self.sim.data.set_joint_qpos('{}:joint'.format(self.object_names[obj_placed]), object_qpos)
-                    positions.append(object_xpos.copy())
-                    obj_placed += 1
-                if counter > 100:
-                    # safety net to be sure we find positions
-                    over = False
-                    break
-        if biased_init and np.random.rand() < self.p_grasp:
-            ids = list(range(self.num_blocks))
-            # do not grasp base of stack
-            if stack:
-                for s in stack[1:]:
-                    ids.remove(s)
-            idx_grasp = np.random.choice(ids)
-            self._grasp(idx_grasp)
+            if biased_init and np.random.rand() < self.p_grasp:
+                ids = list(range(self.num_blocks))
+                # do not grasp base of stack
+                if stack:
+                    for s in stack[1:]:
+                        ids.remove(s)
+                idx_grasp = np.random.choice(ids)
+                self._grasp(idx_grasp)
 
         self.sim.forward()
         obs = self._get_obs()
