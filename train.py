@@ -168,7 +168,7 @@ def launch(args):
                     policy.save(model_path, epoch)
                     policy.goal_encoder.save(model_path, epoch)
                 if rank==0: 
-                    logger.info(f'\tEpoch #{epoch:d}: SR: {global_sr:f} | Loss VAE: {loss_encoder:.3f} | {loss_mse:.3f} | {loss_kld:.3f}')
+                    logger.info(f'\tEpoch #{epoch:d}: SR: {global_sr:.3f} | Loss VAE: {loss_encoder:.4f} | {loss_mse:.4f} | {loss_kld:.4f}')
 
 
 def log_and_save( goal_sampler, epoch, episode_count, av_res, av_rew, global_sr, time_dict):

@@ -39,16 +39,15 @@ class GoalSampler:
                 raise NotImplementedError
         else:
             # Embeddings at this stage are kept zeros
-            embeddings = np.zeros((n_goals, 3))
-            if self.args.cuda:
-                goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().cpu().numpy()
+            if self.policy.goal_encoder.buffer.current_size > 0:
+                goals = self.policy.goal_encoder.buffer.sample(n_goals)
             else:
-                goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().numpy()
-            # At this step, goals are normalized
-            # goals = self.policy.g_norm.unormalize(goals)
-            # unormalized_goals = (goals * normalizer.std ) + normalizer.mean
-            stop = 1
-            # generated goals are normalized
+                goals = np.random.uniform(low=0, high=0.1, size = (n_goals, self.args.env_params['goal']))
+            # embeddings = np.zeros((n_goals, 3))
+            # if self.args.cuda:
+            #     goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().cpu().numpy()
+            # else:
+            #     goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().numpy()
         return goals
 
     def update(self, episodes, t):
