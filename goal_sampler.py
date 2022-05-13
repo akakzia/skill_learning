@@ -29,7 +29,14 @@ class GoalSampler:
         """
         if evaluation:
             # Evaluate on encountered goals
-            goals = self.policy.goal_encoder.buffer.sample(n_goals)
+            if self.args.vae_batch_sample_strategy == 'buffer':
+                goals = self.policy.goal_encoder.buffer.sample(n_goals)
+            elif self.args.vae_batch_sample_strategy == 'limits':
+                goals = np.random.uniform(low=self.policy.goal_encoder.lower_bounds, high=self.policy.goal_encoder.upper_bounds, 
+                                           size = (n_goals, self.args.env_params['goal']))
+                stop = 1
+            else:
+                raise NotImplementedError
         else:
             # Embeddings at this stage are kept zeros
             embeddings = np.zeros((n_goals, 3))

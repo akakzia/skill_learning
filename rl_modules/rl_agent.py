@@ -125,7 +125,13 @@ class RLAgent:
             self._soft_update_target_network(self.model.critic_target, self.model.critic)
     
     def train_encoder(self):
-        batch = self.goal_encoder.buffer.sample(self.args.vae_batch_size)
+        if self.args.vae_batch_sample_strategy == 'buffer':
+            batch = self.goal_encoder.buffer.sample(self.args.vae_batch_size)
+        elif self.args.vae_batch_sample_strategy == 'limits':
+            batch = np.random.uniform(low=self.goal_encoder.lower_bounds, high=self.goal_encoder.upper_bounds, 
+                                      size=(self.args.vae_batch_size, self.args.env_params['goal']))
+        else:
+            raise NotImplementedError
         # batch_norm = self.g_norm.normalize(batch)
         loss, loss_mse, loss_kld = self.goal_encoder.train(batch)
 
