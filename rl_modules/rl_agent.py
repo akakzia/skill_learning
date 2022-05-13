@@ -218,3 +218,11 @@ class RLAgent:
         self.o_norm.std = o_std
         self.g_norm.mean = g_mean
         self.g_norm.std = g_std
+    
+    def load_goal_encoder(self, vae_model_path):
+
+        buffer, buffer_size, encoder, decoder = torch.load(vae_model_path, map_location=lambda storage, loc: storage)
+        self.goal_encoder.encoder.load_state_dict(encoder)
+        self.goal_encoder.decoder.load_state_dict(decoder)
+        self.goal_encoder.buffer.buffer = buffer
+        self.goal_encoder.buffer.current_size = buffer_size
