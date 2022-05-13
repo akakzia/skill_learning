@@ -3,7 +3,7 @@ from utils import get_idxs_per_relation
 from mpi4py import MPI
 
 
-START_GENERATE_GOALS = 1000
+START_GENERATE_GOALS = 1000001
 
 class GoalSampler:
     def __init__(self, args, policy):
