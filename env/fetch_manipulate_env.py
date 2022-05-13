@@ -63,7 +63,7 @@ class FetchManipulateEnv(robot_env.RobotEnv):
         self.num_predicates = len(self.predicates)
         self.reward_type = reward_type
         
-        self.p_grasp = 0.5
+        self.p_grasp = 0.3
         self.goal_size = num_blocks * (num_blocks - 1) * 3 // 2
 
         self.object_names = ['object{}'.format(i) for i in range(self.num_blocks)]
