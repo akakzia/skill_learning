@@ -59,7 +59,7 @@ def get_args():
     parser.add_argument("--layer-sizes", type=list, default=[128, 128])
     parser.add_argument("--latent-size", type=int, default=7)
     parser.add_argument("--embedding-size", type=int, default=3)
-    parser.add_argument("--k-param", type=float, default=1.)
+    parser.add_argument("--k-param", type=float, default=0.2)
     parser.add_argument("--vae-buffer-size", type=int, default=int(1e6))
     parser.add_argument("--n-encoder-updates", type=int, default=10)
     parser.add_argument("--vae-batch-sample-strategy", type=str, default='buffer')
