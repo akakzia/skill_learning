@@ -22,19 +22,16 @@ def get_env_params(env):
 
 if __name__ == '__main__':
     num_eval = 1
-    path = '/home/ahmed/Documents/final_year/ALOE2022/rlgraph/models/'
-    model_path = path + 'actor_critic_gn.pt'
+    path = '/home/ahmed/Documents/Amaterasu/gobi/skill_learning/models/first_stage_05/models/'
+    model_path = path + 'model_20.pt'
+    vae_model_path = path + 'vae_model_20.pt'
 
     # with open(path + 'config.json', 'r') as f:
     #     params = json.load(f)
     # args = SimpleNamespace(**params)
     args = get_args()
 
-    if args.algo == 'continuous':
-        args.env_name = 'FetchManipulate5ObjectsContinuous-v0'
-        args.multi_criteria_her = True
-    else:
-        args.env_name = 'FetchManipulate5Objects-v0'
+    args.env_name = f'FetchManipulate{args.n_blocks:d}Objects-v0'
 
     # Make the environment
     env = gym.make(args.env_name)
@@ -50,29 +47,27 @@ if __name__ == '__main__':
 
     args.env_params = get_env_params(env)
 
-    goal_sampler = GoalSampler(args)
-
     # create the sac agent to interact with the environment
     if args.agent == "SAC":
-        policy = RLAgent(args, env.compute_reward, goal_sampler)
+        policy = RLAgent(args, env.compute_reward)
         policy.load(model_path, args)
+        policy.load_goal_encoder(vae_model_path)
     else:
         raise NotImplementedError
 
-    # def rollout worker
-    rollout_worker = RolloutWorker(env, policy, goal_sampler,  args)
+    goal_sampler = GoalSampler(args, policy)
 
-    eval_goals = []
-    instructions = ['stack_3', 'stack_4'] * 10
-    for instruction in instructions:
-        eval_goal = get_eval_goals(instruction, n=args.n_blocks)
-        eval_goals.append(eval_goal.squeeze(0))
-    eval_goals = np.array(eval_goals)
+    # def rollout worker
+    rollout_worker = RolloutWorker(env, policy,  args)
+
+    eval_goals = goal_sampler.sample_goal(n_goals=50, evaluation=False)
+
+    # eval_goals = np.array([[0.1, 0.1, 0.], [0.02, 0.02, 0.046]])
 
     all_results = []
     for i in range(num_eval):
         episodes = rollout_worker.generate_rollout(eval_goals, true_eval=True, animated=True)
-        results = np.array([e['rewards'][-1] == 5. for e in episodes])
+        results = np.array([e['rewards'][-1] == 3. for e in episodes])
         all_results.append(results)
 
     results = np.array(all_results)
