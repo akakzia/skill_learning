@@ -55,13 +55,13 @@ def get_args():
     parser.add_argument('--architecture', type=str, default='full_gn', help='[full_gn, interaction_network, relation_network, deep_sets, flat]')
     # The goal generator arguments
     parser.add_argument("--vae-batch-size", type=int, default=128)
-    parser.add_argument("--learning-rate", type=float, default=0.001)
+    parser.add_argument("--learning-rate", type=float, default=0.0001)
     parser.add_argument("--layer-sizes", type=list, default=[128, 128])
     parser.add_argument("--latent-size", type=int, default=2)
     parser.add_argument("--embedding-size", type=int, default=3)
     parser.add_argument("--k-param", type=float, default=0.2)
     parser.add_argument("--vae-buffer-size", type=int, default=int(1e6))
-    parser.add_argument("--n-encoder-updates", type=int, default=10)
+    parser.add_argument("--n-encoder-updates", type=int, default=30)
     parser.add_argument("--scaling-factor", type=int, default=10)
     parser.add_argument("--vae-batch-sample-strategy", type=str, default='buffer')
     # the testing arguments
