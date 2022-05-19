@@ -43,7 +43,7 @@ class GoalSampler:
             elif self.policy.goal_encoder.buffer.current_size < START_GENERATE_GOALS:
                 goals = self.policy.goal_encoder.buffer.sample(n_goals)
             else:
-                embeddings = np.zeros((n_goals, 3))
+                embeddings = np.zeros((n_goals, self.args.embedding_size))
                 if self.args.cuda:
                     goals = self.policy.goal_encoder.inference(embeddings=embeddings, n=n_goals).detach().cpu().numpy()
                 else:
