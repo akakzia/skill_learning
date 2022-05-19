@@ -44,7 +44,11 @@ class GnCritic(nn.Module):
                        for i in range(self.nb_objects)]
 
         # inp = torch.stack([torch.cat([act, obs_body, obj, edge_features_attended[i, :, :]], dim=1) for i, obj in enumerate(obs_objects)])
-        inp = torch.stack([torch.cat([act, obs_body, obj, ag, g], dim=1) for obj in obs_objects])
+        # inp = torch.stack([torch.cat([act, obs_body, obj, ag, g], dim=1) for obj in obs_objects])
+
+        # Goal distance is stocked with reference to first obj (d=obj1-obj2).
+        inp = torch.stack([torch.cat([act, obs_body, obs_objects[0], ag, g], dim=1), 
+                           torch.cat([act, obs_body, obs_objects[1], -ag, -g], dim=1)])
 
         output_phi_critic_1, output_phi_critic_2 = self.phi_critic(inp)
         output_phi_critic_1 = output_phi_critic_1.permute(1, 0, 2)
@@ -140,7 +144,11 @@ class GnActor(nn.Module):
                        for i in range(self.nb_objects)]
 
         # inp = torch.stack([torch.cat([obs_body, obj, edge_features_attended[i, :, :]], dim=1) for i, obj in enumerate(obs_objects)])
-        inp = torch.stack([torch.cat([obs_body, obj, ag, g], dim=1) for obj in obs_objects])
+        # inp = torch.stack([torch.cat([obs_body, obj, ag, g], dim=1) for obj in obs_objects])
+
+        # Goal distance is stocked with reference to first obj (d=obj1-obj2).
+        inp = torch.stack([torch.cat([obs_body, obs_objects[0], ag, g], dim=1), 
+                           torch.cat([obs_body, obs_objects[1], -ag, -g], dim=1)])
 
         output_phi_actor = self.phi_actor(inp)
         output_phi_actor = output_phi_actor.permute(1, 0, 2)
