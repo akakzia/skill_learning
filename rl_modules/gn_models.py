@@ -21,8 +21,8 @@ class GnCritic(nn.Module):
 
         self.n_permutations = self.nb_objects * (self.nb_objects - 1)
 
-        # self.mp_critic = GnnMessagePassing(dim_mp_input, dim_mp_output)
-        # self.edge_self_attention = SelfAttention(dim_mp_output, 1)
+        self.mp_critic = GnnMessagePassing(dim_mp_input, dim_mp_output)
+        self.edge_self_attention = SelfAttention(dim_mp_output, 1)
         self.phi_critic = PhiCriticDeepSet(dim_phi_critic_input, 256, dim_phi_critic_output)
         self.node_self_attention = SelfAttention(dim_phi_critic_output, 1)  # test 1 attention heads
         self.rho_critic = RhoCriticDeepSet(dim_rho_critic_input, dim_rho_critic_output)
@@ -37,18 +37,18 @@ class GnCritic(nn.Module):
 
         # Critic message passing using node features, edge features and global features (here body + action)
         # Returns, for each node, the attended vector of incoming edges
-        # edge_features_attended = self.message_passing(obs, act, ag, g)
+        edge_features_attended = self.message_passing(obs, act, ag, g)
 
         obs_body = obs[:, :self.dim_body]
         obs_objects = [obs[:, self.dim_body + self.dim_object * i: self.dim_body + self.dim_object * (i + 1)]
                        for i in range(self.nb_objects)]
 
-        # inp = torch.stack([torch.cat([act, obs_body, obj, edge_features_attended[i, :, :]], dim=1) for i, obj in enumerate(obs_objects)])
+        inp = torch.stack([torch.cat([act, obs_body, obj, edge_features_attended[i, :, :]], dim=1) for i, obj in enumerate(obs_objects)])
         # inp = torch.stack([torch.cat([act, obs_body, obj, ag, g], dim=1) for obj in obs_objects])
 
         # Goal distance is stocked with reference to first obj (d=obj1-obj2).
-        inp = torch.stack([torch.cat([act, obs_body, obs_objects[0], ag, g], dim=1), 
-                           torch.cat([act, obs_body, obs_objects[1], -ag, -g], dim=1)])
+        # inp = torch.stack([torch.cat([act, obs_body, obs_objects[0], ag, g], dim=1), 
+        #                    torch.cat([act, obs_body, obs_objects[1], -ag, -g], dim=1)])
 
         output_phi_critic_1, output_phi_critic_2 = self.phi_critic(inp)
         output_phi_critic_1 = output_phi_critic_1.permute(1, 0, 2)
@@ -70,10 +70,13 @@ class GnCritic(nn.Module):
         obs_objects = [obs[:, self.dim_body + self.dim_object * i: self.dim_body + self.dim_object * (i + 1)]
                        for i in range(self.nb_objects)]
 
-        delta_g = g - ag
+        # delta_g = g - ag
 
-        inp_mp = torch.stack([torch.cat([obs_body, act, delta_g[:, self.predicate_ids[i]], obs_objects[self.edges[i][0]],
-                                         obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
+        # inp_mp = torch.stack([torch.cat([obs_body, act, delta_g[:, self.predicate_ids[i]], obs_objects[self.edges[i][0]],
+        #                                  obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
+
+        inp_mp = torch.stack([torch.cat([g, ag, act, obs_body, obs_objects[0],obs_objects[1]], dim=-1), 
+                              torch.cat([-g, -ag, act, obs_body, obs_objects[1],obs_objects[0]], dim=-1)])
 
         output_mp = self.mp_critic(inp_mp)
 
@@ -96,8 +99,8 @@ class GnActor(nn.Module):
 
         self.n_permutations = self.nb_objects * (self.nb_objects - 1)
 
-        # self.mp_actor = GnnMessagePassing(dim_mp_input, dim_mp_output)
-        # self.edge_self_attention = SelfAttention(dim_mp_output, 1)
+        self.mp_actor = GnnMessagePassing(dim_mp_input, dim_mp_output)
+        self.edge_self_attention = SelfAttention(dim_mp_output, 1)
         self.phi_actor = PhiActorDeepSet(dim_phi_actor_input, 256, dim_phi_actor_output)
         self.self_attention = SelfAttention(dim_phi_actor_output, 1) # test 1 attention heads
         self.rho_actor = RhoActorDeepSet(dim_rho_actor_input, dim_rho_actor_output)
@@ -119,8 +122,11 @@ class GnActor(nn.Module):
         # inp_mp = torch.stack([torch.cat([obs_body, delta_g[:, self.predicate_ids[i]], obs_objects[self.edges[i][0]],
         #                                  obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
 
-        inp_mp = torch.stack([torch.cat([g, ag, obs_body, obs_objects[self.edges[i][0]],
-                                         obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
+        # inp_mp = torch.stack([torch.cat([g, ag, obs_body, obs_objects[self.edges[i][0]],
+        #                                  obs_objects[self.edges[i][1]]], dim=-1) for i in range(self.n_permutations)])
+
+        inp_mp = torch.stack([torch.cat([g, ag, obs_body, obs_objects[0],obs_objects[1]], dim=-1), 
+                              torch.cat([-g, -ag, obs_body, obs_objects[1],obs_objects[0]], dim=-1)])
 
         output_mp = self.mp_actor(inp_mp)
 
@@ -137,18 +143,18 @@ class GnActor(nn.Module):
 
         # Actor message passing using node features, edge features and global features (here body)
         # Returns, for each node, the attended vector of incoming edges
-        # edge_features_attended = self.message_passing(obs, ag, g)
+        edge_features_attended = self.message_passing(obs, ag, g)
 
         obs_body = obs[:, :self.dim_body]
         obs_objects = [obs[:, self.dim_body + self.dim_object * i: self.dim_body + self.dim_object * (i + 1)]
                        for i in range(self.nb_objects)]
 
-        # inp = torch.stack([torch.cat([obs_body, obj, edge_features_attended[i, :, :]], dim=1) for i, obj in enumerate(obs_objects)])
+        inp = torch.stack([torch.cat([obs_body, obj, edge_features_attended[i, :, :]], dim=1) for i, obj in enumerate(obs_objects)])
         # inp = torch.stack([torch.cat([obs_body, obj, ag, g], dim=1) for obj in obs_objects])
 
         # Goal distance is stocked with reference to first obj (d=obj1-obj2).
-        inp = torch.stack([torch.cat([obs_body, obs_objects[0], ag, g], dim=1), 
-                           torch.cat([obs_body, obs_objects[1], -ag, -g], dim=1)])
+        # inp = torch.stack([torch.cat([obs_body, obs_objects[0], ag, g], dim=1), 
+        #                    torch.cat([obs_body, obs_objects[1], -ag, -g], dim=1)])
 
         output_phi_actor = self.phi_actor(inp)
         output_phi_actor = output_phi_actor.permute(1, 0, 2)
@@ -193,17 +199,17 @@ class GnSemantic:
         dim_mp_actor_input = 2 * self.dim_object + 2 * self.dim_goal + self.dim_body # 2 * dim node + dim partial goal + dim global
         dim_mp_actor_output = 3 * dim_mp_actor_input
 
-        dim_mp_critic_input = 2 * self.dim_object + 2 + (self.dim_body + self.dim_act) # 2 * dim node + dim partial goal + dim global
+        dim_mp_critic_input = 2 * self.dim_object + 2 * self.dim_goal + (self.dim_body + self.dim_act) # 2 * dim node + dim partial goal + dim global
         dim_mp_critic_output = 3 * dim_mp_actor_input
 
-        # dim_phi_actor_input = self.dim_body + self.dim_object + dim_mp_actor_output
-        dim_phi_actor_input = self.dim_body + self.dim_object + 2 * self.dim_goal
+        dim_phi_actor_input = self.dim_body + self.dim_object + dim_mp_actor_output
+        # dim_phi_actor_input = self.dim_body + self.dim_object + 2 * self.dim_goal
         dim_phi_actor_output = 3 * dim_phi_actor_input
         dim_rho_actor_input = dim_phi_actor_output
         dim_rho_actor_output = self.dim_act
 
-        # dim_phi_critic_input = self.dim_body + self.dim_object + dim_mp_critic_output + self.dim_act
-        dim_phi_critic_input = self.dim_body + self.dim_object  + self.dim_act + 2 * self.dim_goal
+        dim_phi_critic_input = self.dim_body + self.dim_object + dim_mp_critic_output + self.dim_act
+        # dim_phi_critic_input = self.dim_body + self.dim_object  + self.dim_act + 2 * self.dim_goal
         dim_phi_critic_output = 3 * dim_phi_critic_input
         dim_rho_critic_input = dim_phi_critic_output
         dim_rho_critic_output = 1
