@@ -170,5 +170,5 @@ class Decoder(nn.Module):
         # x = self.MLP(z)
         x = F.relu(self.linear1(z))
         x = F.relu(self.linear2(x))
-        x = F.relu(self.linear3(x))
+        x = self.linear3(x)
         return x
