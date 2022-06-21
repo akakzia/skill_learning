@@ -16,16 +16,16 @@ mkdir_p(job_directory)
 nb_seeds = 1
 
 for i in range(nb_seeds):
-    job_file = os.path.join(job_directory, "first_stage%.slurm")
+    job_file = os.path.join(job_directory, "test_hand%.slurm")
 
     with open(job_file, 'w') as fh:
         fh.writelines("#!/bin/bash\n")
         fh.writelines("#SBATCH --account=kcr@v100\n")
-        fh.writelines("#SBATCH --job-name=first_stage\n")
-        fh.writelines("#SBATCH --qos=qos_gpu-t3\n")
-        fh.writelines("#SBATCH --output=gloria_first_stage%_%j.out\n")
-        fh.writelines("#SBATCH --error=gloria_first_stage%_%j.out\n")
-        fh.writelines("#SBATCH --time=19:59:59\n")
+        fh.writelines("#SBATCH --job-name=test_hand\n")
+        fh.writelines("#SBATCH --qos=qos_gpu-dev\n")
+        fh.writelines("#SBATCH --output=test_hand%_%j.out\n")
+        fh.writelines("#SBATCH --error=test_hand%_%j.out\n")
+        fh.writelines("#SBATCH --time=1:59:59\n")
         fh.writelines("#SBATCH --ntasks=24\n")
         fh.writelines("#SBATCH --ntasks-per-node=1\n")
         fh.writelines("#SBATCH --gres=gpu:1\n")
@@ -43,7 +43,7 @@ for i in range(nb_seeds):
         fh.writelines("export OMPI_MCA_btl_openib_warn_default_gid_prefix=0\n")
         fh.writelines("export OMPI_MCA_mpi_warn_on_fork=0\n")
 
-        fh.writelines("srun python -u -B train.py --algo 'semantic' --n-blocks 2 --n-epochs 100 --n-cycles 50 --n-batches 30 --architecture 'full_gn' --save-dir 'gloria_first_stage/' 2>&1 ")
+        fh.writelines("srun python -u -B train.py --save-dir 'test_hand_reach/' 2>&1 ")
 
     os.system("sbatch %s" % job_file)
     sleep(1)
