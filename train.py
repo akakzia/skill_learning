@@ -138,7 +138,7 @@ def launch(args):
             eval_goals = goal_sampler.sample_goal(n_goals=1, evaluation=True)
             episodes = rollout_worker.generate_rollout(goals=eval_goals,
                                                        true_eval=True,  # this is offline evaluations
-                                                       animated=True
+                                                       animated=False
                                                        )
 
             results = np.array([e['success'][-1].astype(np.float32) for e in episodes])
