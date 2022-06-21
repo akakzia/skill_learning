@@ -17,9 +17,7 @@ class FlatCritic(nn.Module):
         batch_size = obs.shape[0]
         assert batch_size == len(obs)
 
-        delta_g = g - ag
-
-        inp_state = torch.cat([obs, delta_g], dim=-1)
+        inp_state = torch.cat([obs, ag, g], dim=-1)
 
         q1_pi_tensor, q2_pi_tensor = self.model(inp_state, act)
 
@@ -35,9 +33,7 @@ class FlatActor(nn.Module):
         batch_size = obs.shape[0]
         assert batch_size == len(obs)
 
-        delta_g = g - ag
-
-        inp = torch.cat([obs, delta_g], dim=-1)
+        inp = torch.cat([obs, ag, g], dim=-1)
 
         mean, logstd = self.model(inp)
         return mean, logstd
@@ -68,10 +64,10 @@ class FlatSemantic:
         self.pi_tensor = None
         self.log_prob = None
 
-        dim_actor_input = self.dim_obs + self.dim_goal
+        dim_actor_input = self.dim_obs + 2 * self.dim_goal
         dim_actor_output = self.dim_act
 
-        dim_critic_input = self.dim_obs + self.dim_goal + self.dim_act
+        dim_critic_input = self.dim_obs + 2 * self.dim_goal + self.dim_act
         dim_critic_output = 1
 
         self.critic = FlatCritic(dim_critic_input, dim_critic_output)

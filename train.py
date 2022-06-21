@@ -10,7 +10,7 @@ from vae_models.vae import ContextVAE
 import random
 from rollout import RolloutWorker
 from goal_sampler import GoalSampler
-from utils import init_storage
+from utils import init_storage, compute_reward_handreach
 import time
 from mpi_utils import logger
 
@@ -32,7 +32,6 @@ def launch(args):
     t_total_init = time.time()
 
     # Make the environment
-    args.env_name = 'FetchManipulate{}Objects-v0'.format(args.n_blocks)
     env = gym.make(args.env_name)
 
     # set random seeds for reproducibility
@@ -51,18 +50,13 @@ def launch(args):
 
     args.env_params = get_env_params(env)
 
-    # goalVAE = ContextVAE(args)
-
     # Initialize RL Agent
-    if args.agent == "SAC":
-        policy = RLAgent(args, env.compute_reward)
-    else:
-        raise NotImplementedError
+    policy = RLAgent(args, compute_reward_handreach)
     
     goal_sampler = GoalSampler(args, policy)
 
     # Initialize Rollout Worker
-    rollout_worker = RolloutWorker(env, policy,  args)
+    rollout_worker = RolloutWorker(env, policy, compute_reward_handreach, args)
 
     # Main interaction loop
     episode_count = 0
@@ -144,6 +138,7 @@ def launch(args):
             eval_goals = goal_sampler.sample_goal(n_goals=1, evaluation=True)
             episodes = rollout_worker.generate_rollout(goals=eval_goals,
                                                        true_eval=True,  # this is offline evaluations
+                                                       animated=True
                                                        )
 
             results = np.array([e['success'][-1].astype(np.float32) for e in episodes])

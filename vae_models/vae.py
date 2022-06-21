@@ -36,11 +36,6 @@ class ContextVAE(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-        # Bounds of discovered goal space
-        self.upper_bounds = np.zeros(self.args.env_params['goal'])
-        self.lower_bounds = np.ones(self.args.env_params['goal'])
-
-
     def forward(self, states, embeddings):
 
         batch_size = states.size(0)
@@ -77,13 +72,6 @@ class ContextVAE(nn.Module):
         return recon_state
     
     def store(self, goal_batch):
-        # Store bounds
-        batch_upper_bounds = np.max(goal_batch, axis=0)
-        batch_lower_bounds = np.min(goal_batch, axis=0)
-        self.upper_bounds = np.maximum(batch_upper_bounds, self.upper_bounds)
-        self.lower_bounds = np.minimum(batch_lower_bounds, self.lower_bounds)
-        # Clip to avoid falling objects 
-        self.upper_bounds = np.clip(self.upper_bounds, a_min=0, a_max=np.array([0.25, 0.25, 0.25]))
         # Store episodes in buffer
         self.buffer.store_data(data_batch=goal_batch)
     

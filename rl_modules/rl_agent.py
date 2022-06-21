@@ -35,6 +35,9 @@ class RLAgent:
         if self.architecture == 'full_gn':
             from rl_modules.gn_models import GnSemantic
             self.model = GnSemantic(self.env_params, args)
+        elif self.architecture == 'flat':
+            from rl_modules.flat_models import FlatSemantic
+            self.model = FlatSemantic(self.env_params)
         else:
             raise NotImplementedError
 
@@ -69,10 +72,6 @@ class RLAgent:
             self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.args.lr_entropy)
 
         # her sampler
-        if args.algo == 'continuous':
-            self.continuous_goals = True
-        else:
-            self.continuous_goals = False
         self.her_module = her_sampler(self.args, compute_rew)
 
         # create the replay buffer
@@ -104,17 +103,6 @@ class RLAgent:
     def store(self, episodes):
         self.buffer.store_episode(episode_batch=episodes)
 
-    # pre_process the inputs
-    def _preproc_inputs(self, obs, ag, g):
-        obs_norm = self.o_norm.normalize(obs)
-        delta_g = g - ag
-        # concatenate the stuffs
-        inputs = np.concatenate([obs_norm, delta_g])
-        inputs = torch.tensor(inputs, dtype=torch.float32).unsqueeze(0)
-        if self.args.cuda:
-            inputs = inputs.cuda()
-        return inputs
-
     def train(self):
         # train the network
         self.total_iter += 1
@@ -125,13 +113,7 @@ class RLAgent:
             self._soft_update_target_network(self.model.critic_target, self.model.critic)
     
     def train_encoder(self):
-        if self.args.vae_batch_sample_strategy == 'buffer':
-            batch = self.goal_encoder.buffer.sample(self.args.vae_batch_size)
-        elif self.args.vae_batch_sample_strategy == 'limits':
-            batch = np.random.uniform(low=self.goal_encoder.lower_bounds, high=self.goal_encoder.upper_bounds, 
-                                      size=(self.args.vae_batch_size, self.args.env_params['goal']))
-        else:
-            raise NotImplementedError
+        batch = self.goal_encoder.buffer.sample(self.args.vae_batch_size)
         # batch_norm = self.g_norm.normalize(batch)
         loss, loss_mse, loss_kld = self.goal_encoder.train(batch)
 

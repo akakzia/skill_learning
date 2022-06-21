@@ -1,12 +1,5 @@
 import numpy as np
 
-
-def compute_incremental_reward(ag, g):
-    return np.sum(np.abs(ag - g) < 0.01)
-    
-def is_success(ag, g):
-    return (np.abs(ag - g) < 0.01).all()
-
 def at_least_one_fallen(observation, n):
     """ Given a observation, returns true if at least one object has fallen """
     dim_body = 10
@@ -19,26 +12,22 @@ def at_least_one_fallen(observation, n):
 
 
 class RolloutWorker:
-    def __init__(self, env, policy, args):
+    def __init__(self, env, policy, compute_rew, args):
 
         self.env = env
         self.policy = policy
+        self.compute_rew = compute_rew
         self.env_params = args.env_params
-        self.continuous = args.algo == 'continuous'
         self.args = args
 
     def generate_rollout(self, goals, true_eval, biased_init=False, animated=False):
 
         episodes = []
         for i in range(goals.shape[0]):
-            observation = self.env.unwrapped.reset_goal(goal=np.array(goals[i]), biased_init=biased_init)
+            observation = self.env.unwrapped.reset()
             obs = observation['observation']
             g= goals[i]
-            # ag = observation['achieved_goal']
-            # ag_bin = observation['achieved_goal_binary']
-            # g = observation['desired_goal']
-            # g_bin = observation['desired_goal_binary']
-            distance = np.abs(obs[10:13] - obs[25:28])
+            ag = observation['achieved_goal']
 
             # ep_obs, ep_ag, ep_ag_bin, ep_g, ep_g_bin, ep_actions, ep_success, ep_rewards = [], [], [], [], [], [], [], []
             ep_obs, ep_ag, ep_g, ep_actions, ep_success, ep_rewards = [], [], [], [], [], []
@@ -48,7 +37,7 @@ class RolloutWorker:
                 # Run policy for one step
                 no_noise = true_eval  # do not use exploration noise if running self-evaluations or offline evaluations
                 # feed both the observation and mask to the policy module
-                action = self.policy.act(obs.copy(), distance.copy(), g.copy(), no_noise)
+                action = self.policy.act(obs.copy(), ag.copy(), g.copy(), no_noise)
 
                 # feed the actions into the environment
                 if animated:
@@ -56,42 +45,30 @@ class RolloutWorker:
 
                 observation_new, r, _, _ = self.env.step(action)
                 obs_new = observation_new['observation']
-                # ag_new = observation_new['achieved_goal']
-                # ag_new_bin = observation_new['achieved_goal_binary']
-                distance_new = np.abs(obs_new[10:13] - obs_new[25:28])
-                r = compute_incremental_reward(distance_new, g)
+                ag_new = observation_new['achieved_goal']
+                r = self.compute_rew(ag, g)
 
                 # Append rollouts
                 ep_obs.append(obs.copy())
-                ep_ag.append(distance.copy())
-                # ep_ag.append(ag.copy())
-                # ep_ag_bin.append(ag_bin.copy())
+                ep_ag.append(ag.copy())
                 ep_g.append(g.copy())
-                # ep_g_bin.append(g_bin.copy())
                 ep_actions.append(action.copy())
                 ep_rewards.append(r)
-                ep_success.append(is_success(distance_new, g))
+                ep_success.append(r == 5)
 
                 # Re-assign the observation
                 obs = obs_new
-                # ag = ag_new
-                # ag_bin = ag_new_bin
-                distance = distance_new
+                ag = ag_new
 
             ep_obs.append(obs.copy())
-            ep_ag.append(distance.copy())
-            # ep_ag.append(ag.copy())
-            # ep_ag_bin.append(ag_bin.copy())
+            ep_ag.append(ag.copy())
 
             # Gather everything
             episode = dict(obs=np.array(ep_obs).copy(),
                            act=np.array(ep_actions).copy(),
                            g=np.array(ep_g).copy(),
-                        #    ag=np.array(ep_ag).copy(),
                            ag=np.array(ep_ag).copy(),
                            success=np.array(ep_success).copy(),
-                        #    g_binary=np.array(ep_g_bin).copy(),
-                        #    ag_binary=np.array(ep_ag_bin).copy(),
                            rewards=np.array(ep_rewards).copy())
 
 

@@ -15,10 +15,8 @@ def get_args():
     parser.add_argument('--seed', type=int, default=np.random.randint(1e6), help='random seed')
     parser.add_argument('--num-workers', type=int, default=MPI.COMM_WORLD.Get_size(), help='the number of cpus to collect samples')
     parser.add_argument('--cuda', action='store_true', help='if use gpu do the acceleration')
-    # the environment arguments
-    parser.add_argument('--algo', type=str, default='semantic', help="'semantic', 'continuous'")
-    parser.add_argument('--agent', type=str, default='SAC', help='the RL algorithm name')
-    parser.add_argument('--n-blocks', type=int, default=2, help='The number of blocks to be considered in the FetchManipulate env')
+    # the environment argumentss
+    parser.add_argument('--env-name', type=str, default='HandReach-v0', help='Environment name')
     # the training arguments
     parser.add_argument('--n-epochs', type=int, default=1000, help='the number of epochs to train the agent')
     parser.add_argument('--n-cycles', type=int, default=50, help='the times to collect samples per epoch')
@@ -52,7 +50,7 @@ def get_args():
     parser.add_argument('--normalize_goal', type=bool, default=True, help='do evaluation at the end of the epoch w/ frequency')
     parser.add_argument('--clip-range', type=float, default=5, help='the clip range')
     # the gnns arguments
-    parser.add_argument('--architecture', type=str, default='full_gn', help='[full_gn, interaction_network, relation_network, deep_sets, flat]')
+    parser.add_argument('--architecture', type=str, default='flat', help='[full_gn, interaction_network, relation_network, deep_sets, flat]')
     # The goal generator arguments
     parser.add_argument("--vae-batch-size", type=int, default=128)
     parser.add_argument("--learning-rate", type=float, default=0.0001)
@@ -63,7 +61,6 @@ def get_args():
     parser.add_argument("--vae-buffer-size", type=int, default=int(1e6))
     parser.add_argument("--n-encoder-updates", type=int, default=30)
     parser.add_argument("--scaling-factor", type=int, default=10)
-    parser.add_argument("--vae-batch-sample-strategy", type=str, default='buffer')
     # the testing arguments
     parser.add_argument('--n-test-rollouts', type=int, default=1, help='the number of tests')
 

@@ -1,5 +1,4 @@
 import numpy as np
-from utils import get_idxs_per_relation
 from mpi4py import MPI
 
 
@@ -10,10 +9,7 @@ class GoalSampler:
         self.num_rollouts_per_mpi = args.num_rollouts_per_mpi
         self.rank = MPI.COMM_WORLD.Get_rank()
 
-        self.goal_dim = 3 # distances
-        self.relation_ids = get_idxs_per_relation(n=args.n_blocks)
-
-        self.continuous = args.algo == 'continuous'
+        self.goal_dim = args.env_params['goal']
 
         self.policy = policy
 
@@ -28,14 +24,7 @@ class GoalSampler:
         """
         if evaluation:
             # Evaluate on encountered goals
-            if self.args.vae_batch_sample_strategy == 'buffer':
-                goals = self.policy.goal_encoder.buffer.sample(n_goals)
-            elif self.args.vae_batch_sample_strategy == 'limits':
-                goals = np.random.uniform(low=self.policy.goal_encoder.lower_bounds, high=self.policy.goal_encoder.upper_bounds, 
-                                           size = (n_goals, self.args.env_params['goal']))
-                stop = 1
-            else:
-                raise NotImplementedError
+            goals = self.policy.goal_encoder.buffer.sample(n_goals)
         else:
             # Embeddings at this stage are kept zeros
             if self.policy.goal_encoder.buffer.current_size == 0:
