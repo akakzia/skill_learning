@@ -22,9 +22,9 @@ def get_env_params(env):
 
 if __name__ == '__main__':
     num_eval = 1
-    path = '/home/ahmed/Documents/Amaterasu/gobi/skill_learning/models/first_stage_05/models/'
-    model_path = path + 'model_20.pt'
-    vae_model_path = path + 'vae_model_20.pt'
+    path = '/home/ahmed/Documents/Amaterasu/gobi/skill_learning/models/gnn_algebric/'
+    model_path = path + 'model_60.pt'
+    vae_model_path = path + 'vae_model_60.pt'
 
     # with open(path + 'config.json', 'r') as f:
     #     params = json.load(f)
@@ -60,9 +60,9 @@ if __name__ == '__main__':
     # def rollout worker
     rollout_worker = RolloutWorker(env, policy,  args)
 
-    eval_goals = goal_sampler.sample_goal(n_goals=50, evaluation=False)
+    # eval_goals = goal_sampler.sample_goal(n_goals=20, evaluation=False)
 
-    # eval_goals = np.array([[0.1, 0.1, 0.], [0.02, 0.02, 0.046]])
+    eval_goals = np.array([[0.1, 0.1, 0.], [0.0, 0.0, 0.046]])
 
     all_results = []
     for i in range(num_eval):
