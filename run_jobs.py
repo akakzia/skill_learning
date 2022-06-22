@@ -18,15 +18,15 @@ nb_seeds = 1
 
 for i in range(nb_seeds):
     for env in envs:
-        job_file = os.path.join(job_directory, "test_{env}%.slurm")
+        job_file = os.path.join(job_directory, f"test_{env}%.slurm")
 
         with open(job_file, 'w') as fh:
             fh.writelines("#!/bin/bash\n")
             fh.writelines("#SBATCH --account=kcr@v100\n")
-            fh.writelines("#SBATCH --job-name=test_{env}\n")
+            fh.writelines(f"#SBATCH --job-name=test_{env}\n")
             fh.writelines("#SBATCH --qos=qos_gpu-dev\n")
-            fh.writelines("#SBATCH --output=test_{env}%_%j.out\n")
-            fh.writelines("#SBATCH --error=test_{env}%_%j.out\n")
+            fh.writelines(f"#SBATCH --output=test_{env}%_%j.out\n")
+            fh.writelines(f"#SBATCH --error=test_{env}%_%j.out\n")
             fh.writelines("#SBATCH --time=1:59:59\n")
             fh.writelines("#SBATCH --ntasks=24\n")
             fh.writelines("#SBATCH --ntasks-per-node=1\n")
@@ -45,7 +45,7 @@ for i in range(nb_seeds):
             fh.writelines("export OMPI_MCA_btl_openib_warn_default_gid_prefix=0\n")
             fh.writelines("export OMPI_MCA_mpi_warn_on_fork=0\n")
 
-            fh.writelines("srun python -u -B train.py --env-name {env} --save-dir 'test_{env}/' 2>&1 ")
+            fh.writelines(f"srun python -u -B train.py --env-name {env} --save-dir 'test_{env}/' 2>&1 ")
 
         os.system("sbatch %s" % job_file)
         sleep(1)
