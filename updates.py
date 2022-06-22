@@ -7,7 +7,7 @@ from mpi_utils.mpi_utils import sync_grads
 
 def update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args):
     if args.automatic_entropy_tuning:
-        alpha_loss = -(log_alpha * (log_pi + target_entropy).detach()).mean()
+        alpha_loss = -(log_alpha * (log_pi + target_entropy).detach()).cpu().mean()
 
         alpha_optim.zero_grad()
         alpha_loss.backward()
