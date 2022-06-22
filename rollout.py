@@ -43,10 +43,10 @@ class RolloutWorker:
                 if animated:
                     self.env.render()
 
-                observation_new, r, _, _ = self.env.step(action)
+                observation_new, r, _, info = self.env.step(action)
                 obs_new = observation_new['observation']
                 ag_new = observation_new['achieved_goal']
-                r = self.compute_rew(ag, g)
+                r = self.compute_rew(ag, g, info)
 
                 # Append rollouts
                 ep_obs.append(obs.copy())

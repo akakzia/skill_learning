@@ -30,7 +30,7 @@ class her_sampler:
         # replace goal with achieved goal
         future_ag = episode_batch['ag'][episode_idxs[her_indexes], future_t]
         transitions['g'][her_indexes] = future_ag
-        transitions['r'] = np.expand_dims(np.array([self.reward_func(ag_next, g) for ag_next, g in zip(transitions['ag_next'],
+        transitions['r'] = np.expand_dims(np.array([self.reward_func(ag_next, g, None) for ag_next, g in zip(transitions['ag_next'],
                                                                                             transitions['g'])]), 1)
 
         return transitions

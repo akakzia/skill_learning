@@ -195,7 +195,6 @@ class RLAgent:
         self.alpha, self.log_alpha = update_deepsets(self.model, self.policy_optim, self.critic_optim, self.alpha, self.log_alpha, self.target_entropy,
                                                 self.alpha_optim, obs_norm, ag_norm, g_norm, obs_next_norm, ag_next_norm, actions, rewards, self.args)
         
-        print(self.alpha)
 
     def save(self, model_path, epoch):
         torch.save([self.o_norm.mean, self.o_norm.std, self.g_norm.mean, self.g_norm.std,

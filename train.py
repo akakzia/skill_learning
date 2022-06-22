@@ -51,12 +51,12 @@ def launch(args):
     args.env_params = get_env_params(env)
 
     # Initialize RL Agent
-    policy = RLAgent(args, compute_reward_handreach)
+    policy = RLAgent(args, env.compute_reward)
     
     goal_sampler = GoalSampler(args, policy)
 
     # Initialize Rollout Worker
-    rollout_worker = RolloutWorker(env, policy, compute_reward_handreach, args)
+    rollout_worker = RolloutWorker(env, policy, env.compute_reward, args)
 
     # Main interaction loop
     episode_count = 0
