@@ -5,7 +5,7 @@ from rl_modules.replay_buffer import ReplayBuffer
 from rl_modules.networks import QNetworkFlat, GaussianPolicyFlat
 from mpi_utils.normalizer import normalizer
 from her_modules.her import her_sampler
-from updates import update_flat, update_deepsets
+from updates import update_deepsets
 from vae_models.vae import ContextVAE
 
 
@@ -23,6 +23,9 @@ class RLAgent:
 
         self.args = args
         self.alpha = args.alpha
+        self.log_alpha = np.log(self.alpha)
+        self.target_entropy = None
+        self.alpha_optim = None
         self.env_params = args.env_params
 
         self.total_iter = 0
@@ -70,6 +73,7 @@ class RLAgent:
             self.target_entropy = -torch.prod(torch.Tensor(self.env_params['action'])).item()
             self.log_alpha = torch.zeros(1, requires_grad=True)
             self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.args.lr_entropy)
+            self.alpha = 1.
 
         # her sampler
         self.her_module = her_sampler(self.args, compute_rew)
@@ -188,8 +192,10 @@ class RLAgent:
         obs_next_norm = self.o_norm.normalize(transitions['obs_next'])
         ag_next_norm = self.g_norm.normalize(transitions['ag_next'])
 
-        update_deepsets(self.model, self.policy_optim, self.critic_optim, self.alpha, self.log_alpha, self.target_entropy, self.alpha_optim,
-            obs_norm, ag_norm, g_norm, obs_next_norm, ag_next_norm, actions, rewards, self.args)
+        self.alpha, self.log_alpha = update_deepsets(self.model, self.policy_optim, self.critic_optim, self.alpha, self.log_alpha, self.target_entropy,
+                                                self.alpha_optim, obs_norm, ag_norm, g_norm, obs_next_norm, ag_next_norm, actions, rewards, self.args)
+        
+        print(self.alpha)
 
     def save(self, model_path, epoch):
         torch.save([self.o_norm.mean, self.o_norm.std, self.g_norm.mean, self.g_norm.std,
