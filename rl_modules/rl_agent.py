@@ -72,10 +72,11 @@ class RLAgent:
         if self.args.automatic_entropy_tuning:
             self.target_entropy = -torch.prod(torch.Tensor(self.env_params['action'])).item()
             self.log_alpha = torch.zeros(1, requires_grad=True)
+            self.alpha = torch.ones(1)
             if self.args.cuda:
                 self.log_alpha.cuda()
+                self.alpha.cuda()
             self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.args.lr_entropy)
-            self.alpha = 1.
 
         # her sampler
         self.her_module = her_sampler(self.args, compute_rew)
