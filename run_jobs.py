@@ -27,7 +27,7 @@ for i in range(nb_seeds):
             fh.writelines("#SBATCH --qos=qos_gpu-dev\n")
             fh.writelines(f"#SBATCH --output=test_{env}%_%j.out\n")
             fh.writelines(f"#SBATCH --error=test_{env}%_%j.out\n")
-            fh.writelines("#SBATCH --time=0:09:59\n")
+            fh.writelines("#SBATCH --time=19:59:59\n")
             fh.writelines("#SBATCH --ntasks=24\n")
             fh.writelines("#SBATCH --ntasks-per-node=1\n")
             fh.writelines("#SBATCH --gres=gpu:1\n")
