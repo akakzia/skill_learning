@@ -44,6 +44,7 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
         ag_next_norm_tensor = ag_next_norm_tensor.cuda()
         actions_tensor = actions_tensor.cuda()
         r_tensor = r_tensor.cuda()
+        alpha = alpha.cuda()
 
     print(alpha.device)
     with torch.no_grad():
