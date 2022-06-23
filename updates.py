@@ -7,6 +7,7 @@ from mpi_utils.mpi_utils import sync_grads
 
 def update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args):
     if args.automatic_entropy_tuning:
+        print('Log alpha in fct: ', log_alpha.device)
         alpha_loss = -(log_alpha * (log_pi + target_entropy).detach().cpu()).mean()
 
         alpha_optim.zero_grad()
@@ -75,6 +76,7 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
     sync_grads(model.critic)
     critic_optim.step()
 
+    print('Log alpha out fct: ', log_alpha.device)
     alpha, log_alpha, alpha_loss, alpha_tlogs = update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args)
 
     return alpha, log_alpha
