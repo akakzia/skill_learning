@@ -18,6 +18,10 @@ def update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args):
     else:
         alpha_loss = torch.tensor(0.)
         alpha_tlogs = torch.tensor(alpha)
+    
+    if args.cuda:
+        alpha = alpha.cuda()
+        log_alpha = log_alpha.cuda()
 
     return alpha, log_alpha, alpha_loss, alpha_tlogs
 
