@@ -35,6 +35,8 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
     ag_next_norm_tensor = torch.tensor(ag_next_norm, dtype=torch.float32)
     actions_tensor = torch.tensor(actions, dtype=torch.float32)
     r_tensor = torch.tensor(rewards, dtype=torch.float32).reshape(rewards.shape[0], 1)
+    alpha_tensor = torch.tensor(alpha, dtype=torch.float32)
+    log_alpha_tensor = torch.tensor(log_alpha, dtype=torch.float32)
 
     if args.cuda:
         obs_norm_tensor = obs_norm_tensor.cuda()
@@ -44,6 +46,8 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
         ag_next_norm_tensor = ag_next_norm_tensor.cuda()
         actions_tensor = actions_tensor.cuda()
         r_tensor = r_tensor.cuda()
+        alpha_tensor = alpha_tensor.cuda()
+        log_alpha_tensor = log_alpha_tensor.cuda()
 
     with torch.no_grad():
         model.forward_pass(obs_next_norm_tensor, ag_next_norm_tensor, g_norm_tensor)
@@ -76,6 +80,6 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
     sync_grads(model.critic)
     critic_optim.step()
 
-    alpha, log_alpha, alpha_loss, alpha_tlogs = update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args)
+    alpha_tensor, log_alpha_tensor, alpha_loss, alpha_tlogs = update_entropy(alpha_tensor, log_alpha_tensor, target_entropy, log_pi, alpha_optim, args)
 
-    return alpha, log_alpha
+    return alpha_tensor, log_alpha_tensor
