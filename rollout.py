@@ -1,4 +1,5 @@
 import numpy as np
+from utils import compute_reward_handreach
 
 def at_least_one_fallen(observation, n):
     """ Given a observation, returns true if at least one object has fallen """
@@ -54,7 +55,7 @@ class RolloutWorker:
                 ep_g.append(g.copy())
                 ep_actions.append(action.copy())
                 ep_rewards.append(r)
-                ep_success.append(r == 5)
+                ep_success.append(r == 0)
 
                 # Re-assign the observation
                 obs = obs_new

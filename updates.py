@@ -40,8 +40,9 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
         ag_next_norm_tensor = ag_next_norm_tensor.cuda()
         actions_tensor = actions_tensor.cuda()
         r_tensor = r_tensor.cuda()
-        alpha = alpha.cuda()
-        log_alpha = log_alpha.cuda()
+        if args.automatic_entropy_tuning:
+            alpha = alpha.cuda()
+            log_alpha = log_alpha.cuda()
 
     with torch.no_grad():
         model.forward_pass(obs_next_norm_tensor, ag_next_norm_tensor, g_norm_tensor)

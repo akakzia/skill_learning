@@ -187,7 +187,7 @@ def compute_reward_handreach(ag, g, type='incremental'):
                          for i in range(nb_fingers)])
     
     if type == 'incremental':
-        return np.sum(distances < 0.01)
+        return np.sum(distances < 0.02)
     else:
         if np.mean(distances) < 0.01:
             return 1.
