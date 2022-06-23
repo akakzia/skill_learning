@@ -18,10 +18,6 @@ def update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args):
     else:
         alpha_loss = torch.tensor(0.)
         alpha_tlogs = torch.tensor(alpha)
-    
-    if args.cuda:
-        alpha = alpha.cuda()
-        log_alpha = log_alpha.cuda()
 
     return alpha, log_alpha, alpha_loss, alpha_tlogs
 
@@ -45,6 +41,7 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
         actions_tensor = actions_tensor.cuda()
         r_tensor = r_tensor.cuda()
         alpha = alpha.cuda()
+        log_alpha = log_alpha.cuda()
 
     print(alpha.device)
     with torch.no_grad():
