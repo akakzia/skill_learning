@@ -47,7 +47,7 @@ class RolloutWorker:
                 observation_new, r, _, info = self.env.step(action)
                 obs_new = observation_new['observation']
                 ag_new = observation_new['achieved_goal']
-                r = self.compute_rew(ag, g, info)
+                r = self.compute_rew(ag, g, info) + 1.
 
                 # Append rollouts
                 ep_obs.append(obs.copy())
@@ -55,7 +55,7 @@ class RolloutWorker:
                 ep_g.append(g.copy())
                 ep_actions.append(action.copy())
                 ep_rewards.append(r)
-                ep_success.append(r == 0)
+                ep_success.append(r == 1)
 
                 # Re-assign the observation
                 obs = obs_new

@@ -32,7 +32,7 @@ def get_args():
     parser.add_argument('--self-eval-prob', type=float, default=0.1, help='Probability to perform self-evaluation')
     parser.add_argument('--gamma', type=float, default=0.98, help='the discount factor')
     parser.add_argument('--alpha', type=float, default=0.2, help='entropy coefficient')
-    parser.add_argument('--automatic_entropy_tuning', type=bool, default=True, help='Tune entropy')
+    parser.add_argument('--automatic_entropy_tuning', type=bool, default=False, help='Tune entropy')
     parser.add_argument('--action-l2', type=float, default=1, help='l2 reg')
     parser.add_argument('--lr-actor', type=float, default=0.001, help='the learning rate of the actor')
     parser.add_argument('--lr-critic', type=float, default=0.001, help='the learning rate of the critic')
