@@ -7,7 +7,6 @@ from mpi_utils.mpi_utils import sync_grads
 
 def update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args):
     if args.automatic_entropy_tuning:
-        print('Log alpha in fct: ', log_alpha.device)
         alpha_loss = -(log_alpha * (log_pi + target_entropy).detach()).mean()
 
         alpha_optim.zero_grad()
@@ -44,7 +43,6 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
         alpha = alpha.cuda()
         log_alpha = log_alpha.cuda()
 
-    print(alpha.device)
     with torch.no_grad():
         model.forward_pass(obs_next_norm_tensor, ag_next_norm_tensor, g_norm_tensor)
         actions_next, log_pi_next = model.pi_tensor, model.log_prob
@@ -76,7 +74,6 @@ def update_deepsets(model, policy_optim, critic_optim, alpha, log_alpha, target_
     sync_grads(model.critic)
     critic_optim.step()
 
-    print('Log alpha out fct: ', log_alpha.device)
     alpha, log_alpha, alpha_loss, alpha_tlogs = update_entropy(alpha, log_alpha, target_entropy, log_pi, alpha_optim, args)
 
     return alpha, log_alpha
