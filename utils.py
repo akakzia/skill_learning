@@ -178,7 +178,7 @@ def get_graph_structure(n):
 
     return edges, incoming_edges, predicate_ids
 
-def compute_reward_handreach(ag, g, type='incremental'):
+def compute_reward_handreach(ag, g, type='sparse'):
     """ Given the achieved goal and the goal, computes the reward for the HandReach-v0 environment """
     nb_features_per_finger = 3
     nb_fingers = 5
@@ -189,7 +189,7 @@ def compute_reward_handreach(ag, g, type='incremental'):
     if type == 'incremental':
         return np.sum(distances < 0.02)
     else:
-        if np.mean(distances) < 0.01:
+        if np.sum(distances < 0.02) == nb_fingers:
             return 1.
         else:
             return 0.

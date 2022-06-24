@@ -13,7 +13,7 @@ scratch = os.environ['SCRATCH']
 # Make top level directories
 mkdir_p(job_directory)
 
-envs = ['HandReach-v0', 'HandManipulateBlockRotateXYZ-v0']
+envs = ['HandReach-v0']
 nb_seeds = 1
 
 for i in range(nb_seeds):

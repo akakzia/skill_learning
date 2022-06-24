@@ -1,5 +1,4 @@
 import numpy as np
-from utils import compute_reward_handreach
 
 def at_least_one_fallen(observation, n):
     """ Given a observation, returns true if at least one object has fallen """
@@ -44,11 +43,10 @@ class RolloutWorker:
                 if animated:
                     self.env.render()
 
-                observation_new, r, _, info = self.env.step(action)
+                observation_new, r, _, _ = self.env.step(action)
                 obs_new = observation_new['observation']
                 ag_new = observation_new['achieved_goal']
-                r = self.compute_rew(ag, g, info) + 1.
-
+                r = self.compute_rew(ag, g) 
                 # Append rollouts
                 ep_obs.append(obs.copy())
                 ep_ag.append(ag.copy())

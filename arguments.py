@@ -16,7 +16,7 @@ def get_args():
     parser.add_argument('--num-workers', type=int, default=MPI.COMM_WORLD.Get_size(), help='the number of cpus to collect samples')
     parser.add_argument('--cuda', action='store_true', help='if use gpu do the acceleration')
     # the environment argumentss
-    parser.add_argument('--env-name', type=str, default='HandManipulateBlockRotateXYZ-v0', help='Environment name')
+    parser.add_argument('--env-name', type=str, default='HandReach-v0', help='Environment name')
     # the training arguments
     parser.add_argument('--n-epochs', type=int, default=1000, help='the number of epochs to train the agent')
     parser.add_argument('--n-cycles', type=int, default=50, help='the times to collect samples per epoch')
