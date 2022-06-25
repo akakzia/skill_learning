@@ -52,8 +52,9 @@ class GoalSampler:
             all_episode_list = [e for eps in all_episodes for e in eps]
 
             for e in all_episode_list:
-                discovered_goals += [e for e in np.unique(np.around(e['ag'], decimals=3), axis=0)]
-
+                # discovered_goals += [e for e in np.unique(np.around(e['ag'], decimals=3), axis=0)]
+                discovered_goals += [e['ag'][-1]]
+                
         discovered_goals = MPI.COMM_WORLD.bcast(discovered_goals, root=0)
         # self.sync()
 
